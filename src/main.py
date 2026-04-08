@@ -1,33 +1,70 @@
-from maze_logic import build_graph, find_start_end, display_maze, maze
-from algorithms.bfs import bfs
+import pygame
+import sys
+from maze_logic import build_graph, find_start_end, maze
 from algorithms.dijkstra import dijkstra
 
-def main():
+pygame.init()
+
+CELL_SIZE = 80
+ROWS = len(maze)
+COLS = len(maze[0])
+
+WIDTH = COLS * CELL_SIZE
+HEIGHT = ROWS * CELL_SIZE
+
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Maze Solver: Logic to Visuals")
+
+WHITE = (255, 255, 255)
+BLACK = (20, 20, 20)
+GREEN = (46, 204, 113)
+RED = (231, 76, 60)
+BLUE = (52, 152, 219)
+YELLOW = (241, 196, 15)
+
+
+def draw_maze(path=None):
+    path_set = set(path) if path else set()
+
+    for r in range(ROWS):
+        for c in range(COLS):
+            x = c * CELL_SIZE
+            y = r * CELL_SIZE
+
+            if maze[r][c] == '#':
+                color = BLACK
+            elif maze[r][c] == 'S':
+                color = GREEN
+            elif maze[r][c] == 'E':
+                color = RED
+            elif (r, c) in path_set:
+                color = YELLOW
+            else:
+                color = WHITE
+
+            pygame.draw.rect(screen, color, (x, y, CELL_SIZE, CELL_SIZE))
+            pygame.draw.rect(screen, BLUE, (x, y, CELL_SIZE, CELL_SIZE), 1)
+
+
+def run_game():
     graph = build_graph()
     start, end = find_start_end()
 
-    print("--- MAZE SOLVER ---")
-    print(f"Start: {start} | End: {end}")
-
-    print("\nOriginal Maze:")
-    display_maze(maze)
-
-    bfs_path = bfs(graph, start, end)
-    if bfs_path:
-        print("\nBFS Solved Maze (Shortest Steps):")
-        display_maze(maze, bfs_path)
-        print(f"Steps: {len(bfs_path) - 1}")
-
-    print("Debug - Start Node Neighbors:", graph.adj_list.get(start))
-
     dijkstra_result = dijkstra(graph, start, end)
-    if dijkstra_result:
-        dijkstra_path, cost = dijkstra_result
-        print("\nDijkstra Solved Maze (Lowest Cost):")
-        display_maze(maze, dijkstra_path)
-        print(f"Total Cost: {cost}")
-    else:
-        print("\nDijkstra failed to find a path.")
+    path_to_draw = dijkstra_result[0] if dijkstra_result else None
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        screen.fill(WHITE)
+
+        draw_maze(path=path_to_draw)
+
+        pygame.display.update()
+
 
 if __name__ == "__main__":
-    main()
+    run_game()
