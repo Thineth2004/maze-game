@@ -1,19 +1,18 @@
 import pygame
 import sys
-from maze_logic import build_graph, find_start_end, maze
+from maze_logic import build_graph, find_start_end, maze, CELL_SIZE
+from algorithms.bfs import bfs
 from algorithms.dijkstra import dijkstra
 
 pygame.init()
 
-CELL_SIZE = 80
 ROWS = len(maze)
 COLS = len(maze[0])
-
 WIDTH = COLS * CELL_SIZE
 HEIGHT = ROWS * CELL_SIZE
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Maze Solver: Logic to Visuals")
+pygame.display.set_caption("Maze Solver: BFS vs Dijkstra (Press SPACE to Toggle)")
 
 WHITE = (255, 255, 255)
 BLACK = (20, 20, 20)
@@ -21,11 +20,10 @@ GREEN = (46, 204, 113)
 RED = (231, 76, 60)
 BLUE = (52, 152, 219)
 YELLOW = (241, 196, 15)
+CYAN = (52, 231, 228)
 
 
-def draw_maze(path=None):
-    path_set = set(path) if path else set()
-
+def draw_maze():
     for r in range(ROWS):
         for c in range(COLS):
             x = c * CELL_SIZE
@@ -37,8 +35,6 @@ def draw_maze(path=None):
                 color = GREEN
             elif maze[r][c] == 'E':
                 color = RED
-            elif (r, c) in path_set:
-                color = YELLOW
             else:
                 color = WHITE
 
@@ -46,12 +42,29 @@ def draw_maze(path=None):
             pygame.draw.rect(screen, BLUE, (x, y, CELL_SIZE, CELL_SIZE), 1)
 
 
+def draw_path(path, color):
+    if not path:
+        return
+    for (r, c) in path:
+        if maze[r][c] not in ['S', 'E']:
+            padding = CELL_SIZE // 4
+            x = c * CELL_SIZE + padding
+            y = r * CELL_SIZE + padding
+            size = CELL_SIZE - (padding * 2)
+            pygame.draw.rect(screen, color, (x, y, size, size))
+
+
 def run_game():
     graph = build_graph()
     start, end = find_start_end()
 
-    dijkstra_result = dijkstra(graph, start, end)
-    path_to_draw = dijkstra_result[0] if dijkstra_result else None
+    bfs_path = bfs(graph, start, end)
+
+    d_result = dijkstra(graph, start, end)
+    dijkstra_path = d_result[0] if d_result else None
+
+    show_dijkstra = True
+    clock = pygame.time.Clock()
 
     while True:
         for event in pygame.event.get():
@@ -59,11 +72,22 @@ def run_game():
                 pygame.quit()
                 sys.exit()
 
-        screen.fill(WHITE)
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    show_dijkstra = not show_dijkstra
+                    mode = "Dijkstra (Yellow)" if show_dijkstra else "BFS (Cyan)"
+                    print(f"Switched to: {mode}")
 
-        draw_maze(path=path_to_draw)
+        screen.fill(WHITE)
+        draw_maze()
+
+        if show_dijkstra:
+            draw_path(dijkstra_path, YELLOW)
+        else:
+            draw_path(bfs_path, CYAN)
 
         pygame.display.update()
+        clock.tick(60)
 
 
 if __name__ == "__main__":
