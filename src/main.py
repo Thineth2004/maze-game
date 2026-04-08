@@ -12,7 +12,7 @@ WIDTH = COLS * CELL_SIZE
 HEIGHT = ROWS * CELL_SIZE
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Maze Solver: BFS vs Dijkstra (Press SPACE to Toggle)")
+pygame.display.set_caption("Maze Solver: AI Animation (SPACE to Toggle)")
 
 WHITE = (255, 255, 255)
 BLACK = (20, 20, 20)
@@ -59,11 +59,13 @@ def run_game():
     start, end = find_start_end()
 
     bfs_path = bfs(graph, start, end)
-
     d_result = dijkstra(graph, start, end)
     dijkstra_path = d_result[0] if d_result else None
 
     show_dijkstra = True
+    current_step = 0
+    frame_count = 0
+    animation_speed = 8
     clock = pygame.time.Clock()
 
     while True:
@@ -75,16 +77,24 @@ def run_game():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     show_dijkstra = not show_dijkstra
-                    mode = "Dijkstra (Yellow)" if show_dijkstra else "BFS (Cyan)"
-                    print(f"Switched to: {mode}")
+                    current_step = 0
+                    frame_count = 0
 
         screen.fill(WHITE)
         draw_maze()
 
-        if show_dijkstra:
-            draw_path(dijkstra_path, YELLOW)
-        else:
-            draw_path(bfs_path, CYAN)
+        path = dijkstra_path if show_dijkstra else bfs_path
+
+        if path:
+            frame_count += 1
+            if frame_count % animation_speed == 0:
+                if current_step < len(path):
+                    current_step += 1
+
+            animated_path = path[:current_step]
+
+            color = YELLOW if show_dijkstra else CYAN
+            draw_path(animated_path, color)
 
         pygame.display.update()
         clock.tick(60)
